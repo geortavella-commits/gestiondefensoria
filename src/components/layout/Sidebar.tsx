@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type MainNavSection = 'tablero' | 'personal' | 'subsedes' | 'capacitaciones' | 'documentacion' | 'reportes' | 'configuracion';
+export type MainNavSection = 'tablero' | 'personal' | 'subsedes' | 'capacitaciones' | 'notas' | 'documentacion' | 'reportes' | 'configuracion';
 
 interface Props {
   activeSection: MainNavSection;
@@ -82,6 +82,19 @@ export const Sidebar: React.FC<Props> = ({ activeSection, onNavigate, onLogout }
           >
             <span className="material-symbols-outlined text-[20px]">school</span>
             <span>Talleres &amp; Capacitaciones</span>
+          </button>
+
+          {/* Notas de Pedido */}
+          <button
+            onClick={() => onNavigate('notas')}
+            className={`flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-left transition-colors duration-150 ${
+              activeSection === 'notas'
+                ? 'bg-surface-container text-primary font-label-lg border-l-4 border-secondary'
+                : 'text-on-surface-variant hover:bg-surface-container font-label-md'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[20px]">request_quote</span>
+            <span>Notas de Pedido</span>
           </button>
 
           {/* 5. Documentación & Alertas */}

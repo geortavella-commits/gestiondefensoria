@@ -28,6 +28,9 @@ export interface Area {
   nombre: string;
   descripcion?: string | null;
   activo: boolean;
+  es_coordinadora_subsedes?: boolean;
+  atiende_capacitaciones?: boolean;
+  recibe_notas_pedido?: boolean;
 }
 
 export interface Profile {

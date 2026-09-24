@@ -6,6 +6,7 @@ import { GestionUsuarios } from './components/usuarios/GestionUsuarios';
 import { SubSedesTerritoriales } from './components/subsedes/SubSedesTerritoriales';
 import { CapacitacionesTerritoriales } from './components/capacitaciones/CapacitacionesTerritoriales';
 import { ReportesInstitucionales } from './components/reportes/ReportesInstitucionales';
+import { NotasPedido } from './components/notas/NotasPedido';
 import { TableroControl } from './components/tablero/TableroControl';
 import { LoginPage } from './components/auth/LoginPage';
 import { RegisterPage } from './components/auth/RegisterPage';
@@ -121,7 +122,9 @@ export function App() {
               onNuevoAgente={() => setActiveSection('configuracion')}
             />
           ) : activeSection === 'capacitaciones' ? (
-            <CapacitacionesTerritoriales currentUserId={currentUserId || selectedProfileId} perfilActual={perfilSeleccionado} />
+            <CapacitacionesTerritoriales perfilActual={listaPerfiles.find((p) => p.id === currentUserId) ?? null} />
+          ) : activeSection === 'notas' ? (
+            <NotasPedido perfilActual={listaPerfiles.find((p) => p.id === currentUserId) ?? null} />
           ) : activeSection === 'reportes' ? (
             <ReportesInstitucionales
               onVerLegajos={() => setActiveSection('personal')}

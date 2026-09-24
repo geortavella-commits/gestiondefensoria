@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nota de Pedido — Defensoría NNyA</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap"
+    rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #1a1a18;
+      --paper: #f5f2ec;
+      --cream: #ede9e0;
+      --rule: #d0c9bb;
+      --accent: #2a5c45;
+      --accent-lt: #e8f0ec;
+      --danger: #c0392b;
+      --text-sec: #6b6456;
+      --radius: 6px;
+      --serif: 'DM Serif Display', Georgia, serif;
+      --sans: 'DM Sans', system-ui, sans-serif;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--sans);
+      background: var(--paper);
+      color: var(--ink);
+      min-height: 100vh;
+      padding: 2rem 1rem 4rem;
+    }
+
+    /* ── HEADER ── */
+    .page-header {
+      max-width: 680px;
+      margin: 0 auto 2.5rem;
+      border-bottom: 2px solid var(--ink);
+      padding-bottom: 1.25rem;
+    }
+
+    .page-header h1 {
+      font-family: var(--serif);
+      font-size: 2rem;
+      letter-spacing: -0.01em;
+      line-height: 1.1;
+    }
+
+    .page-header p {
+      font-size: 0.8rem;
+      color: var(--text-sec);
+      margin-top: 4px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    /* ── CARD ── */
+    .card {
+      max-width: 680px;
+      margin: 0 auto 1.5rem;
+      background: #fff;
+      border: 1px solid var(--rule);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .card-head {
+      background: var(--ink);
+      color: #fff;
+      padding: 10px 20px;
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .card-body {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* ── FIELDS ── */
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .field label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-sec);
+    }
+
+    .field input[type="text"],
+    .field input[type="date"],
+    .field input[type="number"],
+    .field textarea,
+    .field select {
+      font-family: var(--sans);
+      font-size: 0.93rem;
+      padding: 9px 12px;
+      border: 1px solid var(--rule);
+      border-radius: var(--radius);
+      background: var(--paper);
+      color: var(--ink);
+      transition: border-color 0.15s, box-shadow 0.15s;
+      width: 100%;
+    }
+
+    .field input:focus,
+    .field textarea:focus,
+    .field select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(42, 92, 69, .12);
+      background: #fff;
+    }
+
+    .field textarea {
+      resize: vertical;
+      min-height: 80px;
+      line-height: 1.5;
+    }
+
+    .row2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    /* ── AREA CHIPS ── */
+    .chip-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border: 1.5px solid var(--rule);
+      border-radius: 99px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      background: var(--paper);
+      user-select: none;
+    }
+
+    .chip:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .chip.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    /* ── TIPO PEDIDO ── */
+    .tipo-group {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .tipo-card {
+      border: 1.5px solid var(--rule);
+      border-radius: var(--radius);
+      padding: 14px 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s;
+      background: var(--paper);
+    }
+
+    .tipo-card:hover {
+      border-color: var(--accent);
+    }
+
+    .tipo-card.active {
+      border-color: var(--accent);
+      background: var(--accent-lt);
+    }
+
+    .tipo-card .ico {
+      font-size: 1.4rem;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .tipo-card .lbl {
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    /* ── PROVEEDOR POR ÍTEM ── */
+    .prov-toggle {
+      background: none;
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-family: var(--sans);
+      font-size: 0.75rem;
+      cursor: pointer;
+      color: var(--text-sec);
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .prov-toggle:hover,
+    .prov-toggle.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-lt);
+    }
+
+    .prov-row {
+      display: none;
+      background: var(--accent-lt);
+      border-top: 1px dashed var(--rule);
+    }
+
+    .prov-row.visible {
+      display: table-row;
+    }
+
+    .prov-row td {
+      padding: 8px 6px 10px;
+    }
+
+    .prov-fields {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .prov-fields input {
+      font-family: var(--sans);
+      font-size: 0.82rem;
+      padding: 5px 8px;
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      background: #fff;
+      color: var(--ink);
+      min-width: 0;
+    }
+
+    .prov-fields input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .prov-fields .pf-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--accent);
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    .prov-field {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .prov-field.f-nombre {
+      flex: 2;
+      min-width: 120px;
+    }
+
+    .prov-field.f-apellido {
+      flex: 2;
+      min-width: 120px;
+    }
+
+    .prov-field.f-cuit {
+      flex: 1.5;
+      min-width: 110px;
+    }
+
+    .prov-field.f-contacto {
+      flex: 2;
+      min-width: 120px;
+    }
+
+    /* ── SECCIONES DE CATEGORÍA ── */
+    .seccion-categoria {
+      border: 1px solid var(--rule);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .seccion-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .seccion-header .ico {
+      font-size: 1.1rem;
+    }
+
+    .seccion-header .badge {
+      margin-left: auto;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 99px;
+      background: rgba(255, 255, 255, 0.35);
+    }
+
+    .s-materiales .seccion-header {
+      background: #e8f0ec;
+      color: #1a3d2b;
+    }
+
+    .s-servicio .seccion-header {
+      background: #e8eef8;
+      color: #1a2e4d;
+    }
+
+    .s-infra .seccion-header {
+      background: #f5ede4;
+      color: #4d2e10;
+    }
+
+    .seccion-body {
+      padding: 12px 14px;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    /* ── ITEMS TABLE ── */
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .items-table th {
+      font-size: 0.66rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-sec);
+      text-align: left;
+      padding: 5px 6px;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    .items-table td {
+      padding: 5px 4px;
+      vertical-align: middle;
+    }
+
+    .items-table input {
+      font-family: var(--sans);
+      font-size: 0.88rem;
+      padding: 6px 8px;
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      background: var(--paper);
+      width: 100%;
+      color: var(--ink);
+    }
+
+    .items-table input:focus {
+      outline: none;
+      border-color: var(--accent);
+      background: #fff;
+    }
+
+    .btn-del {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--rule);
+      font-size: 1rem;
+      padding: 4px 6px;
+      border-radius: 4px;
+      transition: color 0.15s;
+    }
+
+    .btn-del:hover {
+      color: var(--danger);
+    }
+
+    .btn-add-row {
+      background: none;
+      border: 1px dashed var(--rule);
+      border-radius: var(--radius);
+      padding: 7px 12px;
+      font-family: var(--sans);
+      font-size: 0.8rem;
+      cursor: pointer;
+      color: var(--text-sec);
+      transition: all 0.15s;
+      width: 100%;
+    }
+
+    .btn-add-row:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ── ACTIONS ── */
+    .actions {
+      max-width: 680px;
+      margin: 0 auto;
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+    }
+
+    .btn {
+      font-family: var(--sans);
+      font-size: 0.88rem;
+      font-weight: 600;
+      padding: 10px 22px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+    }
+
+    .btn-sec {
+      background: var(--paper);
+      border: 1.5px solid var(--rule);
+      color: var(--ink);
+    }
+
+    .btn-sec:hover {
+      border-color: var(--ink);
+    }
+
+    .btn-pri {
+      background: var(--accent);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-pri:hover {
+      background: #1e4332;
+    }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--ink);
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: var(--radius);
+      font-size: 0.85rem;
+      font-weight: 500;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: all 0.25s;
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 520px) {
+      .row2 {
+        grid-template-columns: 1fr;
+      }
+
+      .tipo-group {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .actions {
+        flex-direction: column-reverse;
+      }
+
+      .btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header class="page-header">
+    <h1>Nota de Pedido</h1>
+    <p>Defensoría de NNyA · Córdoba</p>
+  </header>
+
+  <!-- DATOS GENERALES -->
+  <div class="card">
+    <div class="card-head">Datos generales</div>
+    <div class="card-body">
+      <div class="row2">
+        <div class="field">
+          <label>Fecha</label>
+          <input type="date" id="f-fecha" />
+        </div>
+        <div class="field">
+          <label>N.° de nota (opcional)</label>
+          <input type="text" id="f-numero" placeholder="Ej. NP-2024-001" />
+        </div>
+      </div>
+      <div class="field">
+        <label>Área solicitante</label>
+        <div class="chip-group" id="area-chips">
+          <div class="chip" data-val="Promoción">Promoción</div>
+          <div class="chip" data-val="Prensa y Comunicación">Prensa y Comunicación</div>
+          <div class="chip" data-val="Cooperación Internacional">Cooperación Internacional</div>
+          <div class="chip" data-val="Asistencia">Asistencia</div>
+          <div class="chip" data-val="Legales">Legales</div>
+          <div class="chip" data-val="Coordinación General">Coordinación General</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Solicitado por</label>
+        <input type="text" id="f-solicitante" placeholder="Nombre y cargo" />
+      </div>
+      <div class="field">
+        <label>Descripción / justificación del pedido</label>
+        <textarea id="f-descripcion" placeholder="Describí brevemente el motivo del pedido..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- ITEMS DEL PEDIDO -->
+  <div class="card">
+    <div class="card-head">Detalle del pedido</div>
+    <div class="card-body" style="gap:12px;">
+
+      <!-- MATERIALES -->
+      <div class="seccion-categoria s-materiales">
+        <div class="seccion-header">
+          <span class="ico">📦</span> Materiales
+          <span class="badge" id="badge-materiales">0 ítems</span>
+        </div>
+        <div class="seccion-body">
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th style="width:55%">Descripción</th>
+                <th style="width:15%">Cantidad</th>
+                <th style="width:25%">Observación</th>
+                <th style="width:5%"></th>
+              </tr>
+            </thead>
+            <tbody id="body-materiales"></tbody>
+          </table>
+          <button class="btn-add-row" onclick="addRow('materiales')">+ Agregar material</button>
+        </div>
+      </div>
+
+      <!-- SERVICIO -->
+      <div class="seccion-categoria s-servicio">
+        <div class="seccion-header">
+          <span class="ico">🔧</span> Servicio
+          <span class="badge" id="badge-servicio">0 ítems</span>
+        </div>
+        <div class="seccion-body">
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th style="width:55%">Descripción</th>
+                <th style="width:15%">Cantidad</th>
+                <th style="width:25%">Observación</th>
+                <th style="width:5%"></th>
+              </tr>
+            </thead>
+            <tbody id="body-servicio"></tbody>
+          </table>
+          <button class="btn-add-row" onclick="addRow('servicio')">+ Agregar servicio</button>
+        </div>
+      </div>
+
+      <!-- INFRAESTRUCTURA -->
+      <div class="seccion-categoria s-infra">
+        <div class="seccion-header">
+          <span class="ico">🏗️</span> Infraestructura
+          <span class="badge" id="badge-infra">0 ítems</span>
+        </div>
+        <div class="seccion-body">
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th style="width:55%">Descripción</th>
+                <th style="width:15%">Cantidad</th>
+                <th style="width:25%">Observación</th>
+                <th style="width:5%"></th>
+              </tr>
+            </thead>
+            <tbody id="body-infra"></tbody>
+          </table>
+          <button class="btn-add-row" onclick="addRow('infra')">+ Agregar ítem de infraestructura</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ACCIONES -->
+  <div class="actions">
+    <button class="btn btn-sec" onclick="guardarLocal()">💾 Guardar borrador</button>
+    <button class="btn btn-pri" onclick="generarPDF()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+        stroke-linecap="round" stroke-linejoin="round">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+        <polyline points="14 2 14 8 20 8" />
+      </svg>
+      Generar Nota de Pedido PDF
+    </button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ── Estado ─────────────────────────────────────────────────────────────────
+    let selectedArea = '';
+
+    // ── Fecha default hoy ───────────────────────────────────────────────────────
+    document.getElementById('f-fecha').valueAsDate = new Date();
+
+    // ── Chips de área ──────────────────────────────────────────────────────────
+    document.querySelectorAll('#area-chips .chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('#area-chips .chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        selectedArea = chip.dataset.val;
+      });
+    });
+
+    // ── Proveedor ──────────────────────────────────────────────────────────────
+    function formatCUIT(el) {
+      let v = el.value.replace(/\D/g, '').slice(0, 11);
+      if (v.length > 10) v = v.slice(0, 2) + '-' + v.slice(2, 10) + '-' + v.slice(10);
+      else if (v.length > 2) v = v.slice(0, 2) + '-' + v.slice(2);
+      el.value = v;
+    }
+
+    function toggleProv(btn) {
+      const tr = btn.closest('tr');
+      const provRow = tr.nextElementSibling;
+      const active = provRow.classList.toggle('visible');
+      btn.classList.toggle('active', active);
+      btn.textContent = active ? '👤 Quitar' : '👤 Proveedor';
+      if (active) provRow.querySelector('input').focus();
+    }
+
+    // ── Tabla de ítems por sección ──────────────────────────────────────────────
+    const SECCIONES = {
+      materiales: { label: 'Materiales', placeholder: 'Ej. Resmas de papel...' },
+      servicio: { label: 'Servicio', placeholder: 'Ej. Servicio de limpieza...' },
+      infra: { label: 'Infraestructura', placeholder: 'Ej. Reparación de techo...' },
+    };
+
+    function makeRow(seccion, desc = '', cant = '', obs = '', prov = null) {
+      const provVisible = prov && (prov.nombre || prov.apellido || prov.cuit);
+      // fila principal
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+    <td><input type="text" value="${esc(desc)}" placeholder="${SECCIONES[seccion].placeholder}" oninput="updateBadge('${seccion}')" /></td>
+    <td><input type="number" value="${esc(cant)}" placeholder="1" min="1" style="max-width:70px" /></td>
+    <td><input type="text" value="${esc(obs)}" placeholder="Notas..." /></td>
+    <td style="white-space:nowrap; display:flex; gap:4px; padding:5px 4px;">
+      <button class="prov-toggle${provVisible ? ' active' : ''}" onclick="toggleProv(this)">${provVisible ? '👤 Quitar' : '👤 Proveedor'}</button>
+      <button class="btn-del" onclick="delRow(this,'${seccion}')" title="Eliminar">×</button>
+    </td>
+  `;
+      // fila de proveedor (siempre presente, oculta por defecto)
+      const provTr = document.createElement('tr');
+      provTr.className = 'prov-row' + (provVisible ? ' visible' : '');
+      provTr.innerHTML = `
+    <td colspan="4">
+      <div class="prov-fields">
+        <div class="prov-field f-nombre">
+          <span class="pf-label">Nombre</span>
+          <input type="text" value="${esc(prov?.nombre || '')}" placeholder="Nombre del proveedor" />
+        </div>
+        <div class="prov-field f-apellido">
+          <span class="pf-label">Apellido</span>
+          <input type="text" value="${esc(prov?.apellido || '')}" placeholder="Apellido" />
+        </div>
+        <div class="prov-field f-cuit">
+          <span class="pf-label">CUIT</span>
+          <input type="text" value="${esc(prov?.cuit || '')}" placeholder="20-12345678-9" maxlength="13" oninput="formatCUIT(this)" />
+        </div>
+        <div class="prov-field f-contacto">
+          <span class="pf-label">Contacto</span>
+          <input type="text" value="${esc(prov?.contacto || '')}" placeholder="Nombre de contacto" />
+        </div>
+      </div>
+    </td>
+  `;
+      return [tr, provTr];
+    }
+
+    function addRow(seccion) {
+      const tbody = document.getElementById('body-' + seccion);
+      const [tr, provTr] = makeRow(seccion);
+      tbody.appendChild(tr);
+      tbody.appendChild(provTr);
+      tr.querySelector('input').focus();
+      updateBadge(seccion);
+    }
+
+    function delRow(btn, seccion) {
+      const tr = btn.closest('tr');
+      const next = tr.nextElementSibling;
+      // eliminar también la fila de proveedor si existe
+      if (next && next.classList.contains('prov-row')) next.remove();
+      tr.remove();
+      updateBadge(seccion);
+    }
+
+    function updateBadge(seccion) {
+      const rows = Array.from(document.querySelectorAll(`#body-${seccion} tr`))
+        .filter(r => !r.classList.contains('prov-row'));
+      const filled = rows.filter(r => r.querySelector('input').value.trim()).length;
+      const badge = document.getElementById('badge-' + seccion);
+      badge.textContent = filled + (filled === 1 ? ' ítem' : ' ítems');
+    }
+
+    function getProvFromRow(provTr) {
+      if (!provTr || !provTr.classList.contains('prov-row')) return null;
+      const inputs = provTr.querySelectorAll('input');
+      const n = inputs[0]?.value.trim();
+      const a = inputs[1]?.value.trim();
+      const c = inputs[2]?.value.trim();
+      const ct = inputs[3]?.value.trim();
+      return (n || a || c || ct) ? { nombre: n, apellido: a, cuit: c, contacto: ct } : null;
+    }
+
+    function getItems() {
+      const all = [];
+      ['materiales', 'servicio', 'infra'].forEach(sec => {
+        const rows = Array.from(document.querySelectorAll(`#body-${sec} tr`))
+          .filter(r => !r.classList.contains('prov-row'));
+        rows.forEach(tr => {
+          const inputs = tr.querySelectorAll('input');
+          const desc = inputs[0].value.trim();
+          if (!desc) return;
+          const provTr = tr.nextElementSibling;
+          all.push({
+            tipo: SECCIONES[sec].label,
+            seccion: sec,
+            descripcion: desc,
+            cantidad: inputs[1].value.trim() || '1',
+            observacion: inputs[2].value.trim(),
+            proveedor: getProvFromRow(provTr)
+          });
+        });
+      });
+      return all;
+    }
+
+    // Inicializar con una fila vacía por sección
+    ['materiales', 'servicio', 'infra'].forEach(sec => addRow(sec));
+
+    // ── Guardar local ──────────────────────────────────────────────────────────
+    function guardarLocal() {
+      const data = collectData();
+      try {
+        localStorage.setItem('nota_pedido_borrador', JSON.stringify(data));
+        showToast('✓ Borrador guardado localmente');
+      } catch (e) {
+        showToast('Error al guardar el borrador');
+      }
+    }
+
+    function collectData() {
+      return {
+        fecha: document.getElementById('f-fecha').value,
+        numero: document.getElementById('f-numero').value.trim(),
+        area: selectedArea,
+        solicitante: document.getElementById('f-solicitante').value.trim(),
+        descripcion: document.getElementById('f-descripcion').value.trim(),
+        items: getItems(),
+      };
+    }
+
+    // Cargar borrador si existe
+    window.addEventListener('DOMContentLoaded', () => {
+      try {
+        const saved = localStorage.getItem('nota_pedido_borrador');
+        if (!saved) return;
+        const d = JSON.parse(saved);
+        if (d.fecha) document.getElementById('f-fecha').value = d.fecha;
+        if (d.numero) document.getElementById('f-numero').value = d.numero;
+        if (d.solicitante) document.getElementById('f-solicitante').value = d.solicitante;
+        if (d.descripcion) document.getElementById('f-descripcion').value = d.descripcion;
+        if (d.area) {
+          document.querySelectorAll('#area-chips .chip').forEach(c => {
+            if (c.dataset.val === d.area) { c.classList.add('active'); selectedArea = d.area; }
+          });
+        }
+        if (d.items && d.items.length) {
+          ['materiales', 'servicio', 'infra'].forEach(sec => {
+            document.getElementById('body-' + sec).innerHTML = '';
+          });
+          d.items.forEach(it => {
+            const sec = it.seccion || 'materiales';
+            const tbody = document.getElementById('body-' + sec);
+            if (!tbody) return;
+            const [tr, provTr] = makeRow(sec, it.descripcion, it.cantidad, it.observacion, it.proveedor);
+            tbody.appendChild(tr);
+            tbody.appendChild(provTr);
+            updateBadge(sec);
+          });
+        }
+      } catch (e) { }
+    });
+
+    function esc(str) { return String(str || '').replace(/"/g, '&quot;'); }
+
+    // ── Generar PDF ────────────────────────────────────────────────────────────
+    function generarPDF() {
+      const d = collectData();
+
+      if (!d.area) { showToast('⚠ Seleccioná un área solicitante'); return; }
+      if (!d.items.length) { showToast('⚠ Agregá al menos un ítem en alguna sección'); return; }
+
+      guardarLocal();
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+      const W = 210, M = 20;
+      const cw = W - M * 2;
+      let y = 20;
+
+      const DARK = [26, 26, 24];
+      const ACCENT = [42, 92, 69];
+      const GRAY = [107, 100, 86];
+      const LGRAY = [220, 214, 204];
+      const CREAM = [245, 242, 236];
+
+      // ── Encabezado ──────────────────────────────────────────────────────────
+      doc.setFillColor(...DARK);
+      doc.rect(0, 0, W, 18, 'F');
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.text('DEFENSORÍA DE LAS NIÑAS, NIÑOS Y ADOLESCENTES — CÓRDOBA', M, 11);
+
+      y = 30;
+      doc.setTextColor(...DARK);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(22);
+      doc.text('Nota de Pedido', M, y);
+
+      // línea bajo título
+      y += 4;
+      doc.setDrawColor(...ACCENT);
+      doc.setLineWidth(0.8);
+      doc.line(M, y, M + cw, y);
+      y += 8;
+
+      // metadata row
+      const fmtFecha = d.fecha
+        ? new Date(d.fecha + 'T12:00:00').toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' })
+        : '—';
+
+      const metaItems = [
+        ['FECHA', fmtFecha],
+        ['N.° NOTA', d.numero || '—'],
+        ['ÁREA', d.area || '—'],
+      ];
+
+      doc.setFillColor(...CREAM);
+      doc.roundedRect(M, y, cw, 22, 2, 2, 'F');
+      doc.setDrawColor(...LGRAY);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(M, y, cw, 22, 2, 2, 'S');
+
+      const colW = cw / metaItems.length;
+      metaItems.forEach(([lbl, val], i) => {
+        const x = M + i * colW + 6;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(6.5);
+        doc.setTextColor(...GRAY);
+        doc.text(lbl, x, y + 7);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(9.5);
+        doc.setTextColor(...DARK);
+        doc.text(val, x, y + 15);
+      });
+      y += 30;
+
+      // solicitado por
+      if (d.solicitante) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7);
+        doc.setTextColor(...GRAY);
+        doc.text('SOLICITADO POR', M, y);
+        y += 5;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(10);
+        doc.setTextColor(...DARK);
+        doc.text(d.solicitante, M, y);
+        y += 8;
+      }
+
+      // descripción
+      if (d.descripcion) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7);
+        doc.setTextColor(...GRAY);
+        doc.text('DESCRIPCIÓN / JUSTIFICACIÓN', M, y);
+        y += 5;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9.5);
+        doc.setTextColor(...DARK);
+        const lines = doc.splitTextToSize(d.descripcion, cw);
+        doc.text(lines, M, y);
+        y += lines.length * 5 + 6;
+      }
+
+      // ── Tabla de ítems por sección ──────────────────────────────────────────
+      const secciones = [
+        { key: 'materiales', label: 'Materiales', ico: '📦', color: [42, 92, 69] },
+        { key: 'servicio', label: 'Servicio', ico: '🔧', color: [44, 82, 130] },
+        { key: 'infra', label: 'Infraestructura', ico: '🏗', color: [120, 70, 20] },
+      ];
+
+      const itemsPorSeccion = {};
+      secciones.forEach(s => {
+        itemsPorSeccion[s.key] = d.items.filter(i => i.seccion === s.key);
+      });
+
+      const hayItems = d.items.length > 0;
+      if (hayItems) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7);
+        doc.setTextColor(...GRAY);
+        doc.text('DETALLE DEL PEDIDO', M, y);
+        y += 6;
+      }
+
+      secciones.forEach(sec => {
+        const items = itemsPorSeccion[sec.key];
+        if (!items || items.length === 0) return;
+
+        // salto de página si no hay espacio
+        if (y > 240) { doc.addPage(); y = 20; }
+
+        // encabezado de sección
+        doc.setFillColor(...sec.color);
+        doc.rect(M, y, cw, 7, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8);
+        doc.setTextColor(255, 255, 255);
+        doc.text(sec.label.toUpperCase(), M + 4, y + 5);
+        y += 7;
+
+        // subencabezado columnas
+        doc.setFillColor(240, 240, 238);
+        doc.rect(M, y, cw, 6, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(6.5);
+        doc.setTextColor(...GRAY);
+        const cols = [
+          { label: 'DESCRIPCIÓN', x: M + 3, w: cw * 0.55 },
+          { label: 'CANT.', x: M + cw * 0.58, w: cw * 0.1 },
+          { label: 'OBSERVACIÓN', x: M + cw * 0.70, w: cw * 0.30 },
+        ];
+        cols.forEach(c => doc.text(c.label, c.x, y + 4.5));
+        y += 6;
+
+        // filas
+        items.forEach((item, idx) => {
+          if (y > 265) { doc.addPage(); y = 20; }
+          const rowH = 8;
+          if (idx % 2 === 0) { doc.setFillColor(...CREAM); doc.rect(M, y, cw, rowH, 'F'); }
+          doc.setDrawColor(...LGRAY); doc.setLineWidth(0.2);
+          doc.rect(M, y, cw, rowH, 'S');
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(...DARK);
+          doc.text(doc.splitTextToSize(item.descripcion, cols[0].w - 3), cols[0].x, y + 5.5);
+          doc.text(item.cantidad, cols[1].x, y + 5.5);
+          if (item.observacion) {
+            doc.setTextColor(...GRAY);
+            doc.text(doc.splitTextToSize(item.observacion, cols[2].w - 2), cols[2].x, y + 5.5);
+          }
+          y += rowH;
+
+          // sub-fila de proveedor si existe
+          if (item.proveedor) {
+            if (y > 270) { doc.addPage(); y = 20; }
+            doc.setFillColor(232, 240, 236);
+            doc.rect(M, y, cw, 7, 'F');
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(6.5); doc.setTextColor(...ACCENT);
+            doc.text('PROVEEDOR:', M + 4, y + 4.5);
+            const provParts = [
+              [item.proveedor.nombre, item.proveedor.apellido].filter(Boolean).join(' '),
+              item.proveedor.cuit ? 'CUIT: ' + item.proveedor.cuit : '',
+              item.proveedor.contacto ? 'CONTACTO: ' + item.proveedor.contacto : ''
+            ].filter(Boolean);
+            const provStr = provParts.join('  ·  ');
+            doc.setFont('helvetica', 'normal'); doc.setTextColor(...DARK);
+            doc.text(provStr, M + 26, y + 4.5);
+            y += 7;
+          }
+        });
+        y += 6;
+      });
+
+      // ── Firmas ──────────────────────────────────────────────────────────────
+      if (y > 240) { doc.addPage(); y = 20; }
+
+      doc.setDrawColor(...LGRAY);
+      doc.setLineWidth(0.3);
+      const fw = 60;
+      const firmas = ['Solicitante', 'Área responsable', 'Autorización'];
+      const fxs = [M, M + (cw - fw) / 2, M + cw - fw];
+      firmas.forEach((lbl, i) => {
+        const fx = fxs[i];
+        doc.line(fx, y + 18, fx + fw, y + 18);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        doc.setTextColor(...GRAY);
+        doc.text(lbl, fx + fw / 2, y + 23, { align: 'center' });
+      });
+      y += 30;
+
+      // ── Pie de página ───────────────────────────────────────────────────────
+      const pageH = doc.internal.pageSize.getHeight();
+      doc.setFillColor(...DARK);
+      doc.rect(0, pageH - 10, W, 10, 'F');
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6.5);
+      doc.setTextColor(180, 175, 165);
+      doc.text(
+        `Nota de Pedido generada el ${new Date().toLocaleDateString('es-AR')} · Defensoría de NNyA Córdoba`,
+        W / 2, pageH - 4, { align: 'center' }
+      );
+
+      // ── Guardar ─────────────────────────────────────────────────────────────
+      const filename = `nota_pedido_${(d.area || 'sin_area').toLowerCase().replace(/\s+/g, '_')}_${d.fecha || 'sin_fecha'}.pdf`;
+      doc.save(filename);
+      showToast('✓ PDF generado correctamente');
+    }
+
+    // ── Toast ──────────────────────────────────────────────────────────────────
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+  </script>
+</body>
+
+</html>

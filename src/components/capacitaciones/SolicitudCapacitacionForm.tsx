@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { crearSolicitudCapacitacion } from '../../services/capacitaciones';
-import type { SubSede, Profile } from '../../types/legajo';
+import { esRolGestion } from '../../services/legajo';
+import type { SubSede, Area, Profile } from '../../types/legajo';
 
 interface Props {
   subSedes: SubSede[];
+  areas: Area[];
   perfilActual?: Profile | null;
   onVolver: () => void;
   onSolicitudEnviada: () => void;
@@ -11,35 +13,39 @@ interface Props {
 
 export const SolicitudCapacitacionForm: React.FC<Props> = ({
   subSedes,
+  areas,
   perfilActual,
   onVolver,
   onSolicitudEnviada,
 }) => {
+  const esGestion = esRolGestion(perfilActual?.rol);
+  // Cada usuario solo puede pedir a nombre de su propia sub-sede o de su propia área (gestión, de cualquiera)
+  const sedesDisponibles = esGestion ? subSedes : subSedes.filter((s) => s.id === perfilActual?.sub_sede_id);
+  const areasDisponibles = esGestion ? areas : areas.filter((a) => a.id === perfilActual?.area_id);
+
   // Form State
-  const [subSedeId, setSubSedeId] = useState(
-    perfilActual?.sub_sede_id || subSedes[0]?.id || ''
+  const [origen, setOrigen] = useState<'subsede' | 'area'>(
+    sedesDisponibles.length > 0 ? 'subsede' : 'area'
   );
-  const [telefonoContacto, setTelefonoContacto] = useState(
-    perfilActual?.telefono || '+54 (342) 459-8812'
-  );
+  const [subSedeId, setSubSedeId] = useState(perfilActual?.sub_sede_id || sedesDisponibles[0]?.id || '');
+  const [areaId, setAreaId] = useState(perfilActual?.area_id || areasDisponibles[0]?.id || '');
+  const [solicitanteExterno, setSolicitanteExterno] = useState('');
+  const [contactoExterno, setContactoExterno] = useState('');
+  const [telefonoContacto, setTelefonoContacto] = useState(perfilActual?.telefono || '');
   const [tipoFormacion, setTipoFormacion] = useState('tecnica');
 
   // Sección 2
-  const [tematica, setTematica] = useState(
-    'Abordaje Integral en Situaciones de Vulnerabilidad Extrema y Violencia Digital hacia NNA'
-  );
-  const [justificacion, setJustificacion] = useState(
-    'Se ha detectado un incremento en intervenciones vinculadas a ciberacoso y vulneración de identidad digital de adolescentes en centros educativos. Resulta indispensable homologar el marco de denuncia urgente y contención psicosocial de los equipos técnicos locales.'
-  );
+  const [tematica, setTematica] = useState('');
+  const [justificacion, setJustificacion] = useState('');
   const [destinatarios, setDestinatarios] = useState(
     'Equipos de Primera Escucha y Asistentes Sociales'
   );
-  const [participantes, setParticipantes] = useState<number>(35);
+  const [participantes, setParticipantes] = useState<number>(20);
 
   // Sección 3
   const [modalidad, setModalidad] = useState('presencial');
-  const [fechaPreferente, setFechaPreferente] = useState('2025-04-18');
-  const [fechaAlternativa, setFechaAlternativa] = useState('2025-04-25');
+  const [fechaPreferente, setFechaPreferente] = useState('');
+  const [fechaAlternativa, setFechaAlternativa] = useState('');
   const [recursos, setRecursos] = useState({
     audiovisual: true,
     salon: true,
@@ -67,24 +73,34 @@ export const SolicitudCapacitacionForm: React.FC<Props> = ({
       return;
     }
 
+    if ((origen === 'subsede' && !subSedeId) || (origen === 'area' && !areaId)) {
+      setError('Elegí a nombre de qué sub-sede o área hacés la solicitud.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      const descripcionCompleta = `Tipo: ${tipoFormacion.toUpperCase()} | Destinatarios: ${destinatarios} | Modalidad: ${modalidad.toUpperCase()} | Tel: ${telefonoContacto}`;
-      const justificacionCompleta = `${justificacion}\n\nFecha Preferente: ${fechaPreferente} | Fecha Alternativa: ${fechaAlternativa}`;
+      const descripcionCompleta = `Tipo: ${tipoFormacion.toUpperCase()} | Destinatarios: ${destinatarios} | Modalidad: ${modalidad.toUpperCase()}${telefonoContacto ? ` | Tel: ${telefonoContacto}` : ''}`;
+      const justificacionCompleta = `${justificacion}${
+        fechaAlternativa ? `\n\nFecha alternativa: ${fechaAlternativa}` : ''
+      }`;
 
       await crearSolicitudCapacitacion({
-        sub_sede_id: subSedeId,
+        sub_sede_id: origen === 'subsede' ? subSedeId : null,
+        area_solicitante_id: origen === 'area' ? areaId : null,
         solicitado_por: perfilActual.id,
         tema: tematica,
         descripcion: descripcionCompleta,
         justificacion: justificacionCompleta,
         cantidad_participantes: participantes,
-        fecha_propuesta: fechaPreferente,
+        fecha_propuesta: fechaPreferente || undefined,
+        solicitante_externo: solicitanteExterno.trim() || undefined,
+        solicitante_externo_contacto: contactoExterno.trim() || undefined,
       });
 
-      setSuccessMsg('¡Solicitud enviada exitosamente a la Sede Central!');
+      setSuccessMsg('¡Solicitud enviada a Coordinación de Subsedes!');
       setTimeout(() => {
         onSolicitudEnviada();
       }, 1500);
@@ -116,10 +132,8 @@ export const SolicitudCapacitacionForm: React.FC<Props> = ({
         <div className="inline-flex items-center gap-2 px-3 py-1 bg-surface-container border border-outline-variant rounded-full text-label-sm text-on-surface-variant">
           <span className="material-symbols-outlined text-secondary text-[16px]">verified_user</span>
           <span>
-            Sub-Sede Habilitada: <strong>{sedeSeleccionada?.nombre || 'Región Territorial'}</strong>
+            Solicita: <strong>{origen === 'subsede' ? sedeSeleccionada?.nombre || '—' : areasDisponibles.find((a) => a.id === areaId)?.nombre || '—'}</strong>
           </span>
-          <span className="text-outline-variant">|</span>
-          <span>Expediente: <strong>FOR-2025-089</strong></span>
         </div>
       </div>
 
@@ -221,24 +235,74 @@ export const SolicitudCapacitacionForm: React.FC<Props> = ({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-space-md">
-              {/* Sub-Sede Solicitante */}
+              {/* Solicita como sub-sede o como área */}
               <div className="space-y-1">
-                <label className="font-label-md text-label-md font-semibold text-primary flex items-center justify-between" htmlFor="sub-sede">
-                  Sub-Sede Solicitante <span className="text-error">*</span>
+                <label className="font-label-md text-label-md font-semibold text-primary flex items-center justify-between" htmlFor="origen">
+                  Solicita a nombre de <span className="text-error">*</span>
                 </label>
-                <select
-                  id="sub-sede"
-                  value={subSedeId}
-                  onChange={(e) => setSubSedeId(e.target.value)}
-                  className="w-full h-10 px-3 bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md text-on-surface focus:border-secondary focus:ring-2 focus:ring-secondary/20"
-                >
-                  {subSedes.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.nombre} ({s.localidad || 'Territorio'})
-                    </option>
-                  ))}
-                </select>
-                <p className="font-label-sm text-label-sm text-outline">Sede territorial con personería operativa activa.</p>
+                <div className="flex gap-2">
+                  <select
+                    id="origen"
+                    value={origen}
+                    onChange={(e) => setOrigen(e.target.value as 'subsede' | 'area')}
+                    className="h-10 px-2 bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md text-on-surface focus:border-secondary"
+                  >
+                    {sedesDisponibles.length > 0 && <option value="subsede">Sub-Sede</option>}
+                    {areasDisponibles.length > 0 && <option value="area">Área</option>}
+                  </select>
+                  {origen === 'subsede' ? (
+                    <select
+                      value={subSedeId}
+                      onChange={(e) => setSubSedeId(e.target.value)}
+                      className="flex-1 h-10 px-3 bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md text-on-surface focus:border-secondary"
+                    >
+                      {sedesDisponibles.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.nombre} ({s.localidad || 'Territorio'})
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <select
+                      value={areaId}
+                      onChange={(e) => setAreaId(e.target.value)}
+                      className="flex-1 h-10 px-3 bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md text-on-surface focus:border-secondary"
+                    >
+                      {areasDisponibles.map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+                {sedesDisponibles.length === 0 && areasDisponibles.length === 0 && (
+                  <p className="font-label-sm text-label-sm text-error">
+                    Tu usuario no tiene sub-sede ni área asignada. Pedile a un administrador que te asigne una.
+                  </p>
+                )}
+              </div>
+
+              {/* Institución o persona que pidió originalmente */}
+              <div className="space-y-1">
+                <label className="font-label-md text-label-md font-semibold text-primary" htmlFor="externo">
+                  Institución o persona que lo solicitó
+                </label>
+                <input
+                  id="externo"
+                  type="text"
+                  value={solicitanteExterno}
+                  onChange={(e) => setSolicitanteExterno(e.target.value)}
+                  placeholder="Ej. Escuela N° 12"
+                  className="w-full h-10 px-3 bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md text-on-surface focus:border-secondary"
+                />
+                <input
+                  type="text"
+                  value={contactoExterno}
+                  onChange={(e) => setContactoExterno(e.target.value)}
+                  placeholder="Email o teléfono para enviarle el formulario"
+                  className="w-full h-10 px-3 bg-surface-container-lowest border border-outline-variant rounded-lg text-body-md text-on-surface focus:border-secondary"
+                />
               </div>
 
               {/* Teléfono Directo */}
@@ -267,8 +331,8 @@ export const SolicitudCapacitacionForm: React.FC<Props> = ({
                   type="text"
                   value={
                     perfilActual
-                      ? `${perfilActual.nombre} ${perfilActual.apellido} - Legajo DDNNA #${perfilActual.legajo || '4829'} (${perfilActual.cargo || 'Coordinador Territorial'})`
-                      : 'Lic. Martín Morales - Legajo DDNNA #4829 (Coordinador Territorial)'
+                      ? `${perfilActual.nombre} ${perfilActual.apellido} - Legajo #${perfilActual.legajo || 'S/L'} (${perfilActual.cargo || 'Sin cargo'})`
+                      : 'Sin usuario identificado'
                   }
                   className="w-full h-10 px-3 bg-surface-container border border-outline-variant rounded-lg text-body-md text-on-surface-variant cursor-not-allowed"
                 />
