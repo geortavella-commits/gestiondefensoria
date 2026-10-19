@@ -1,5 +1,6 @@
 import { supabase } from './supabaseClient';
 import type { SubSede, Profile } from '../types/legajo';
+import { TIPOS_ACTIVIDAD, type TipoActividad } from './actividadesTerritoriales';
 
 export interface TableroKpis {
   personalActivo: number;
@@ -9,6 +10,14 @@ export interface TableroKpis {
   talleresRealizados: number;
   solicitudesEnCurso: number;
   antecedentesAlDiaPct: number;
+  actividadesTerritorialesCount: number;
+}
+
+export interface DistribucionItem {
+  clave: string;
+  label: string;
+  cantidad: number;
+  porcentaje: number; // sobre el total de actividades no anuladas, para graficar una barra
 }
 
 export interface CoberturaSedeItem {
@@ -46,6 +55,8 @@ export interface TableroData {
   coberturaSubSedes: CoberturaSedeItem[];
   solicitudesRecientes: SolicitudRecienteItem[];
   alertasCriticas: AlertaCriticaItem[];
+  actividadesPorArea: DistribucionItem[];
+  actividadesPorTipo: DistribucionItem[];
   subSedes: SubSede[];
   perfiles: Profile[];
 }
@@ -57,6 +68,7 @@ export async function getTableroControlData(): Promise<TableroData> {
     { data: docsData },
     { data: solicitudesData },
     { data: capRealizadasData },
+    { data: actividadesData },
   ] = await Promise.all([
     supabase
       .from('profiles')
@@ -74,6 +86,10 @@ export async function getTableroControlData(): Promise<TableroData> {
       .order('created_at', { ascending: false })
       .limit(6),
     supabase.from('capacitaciones_realizadas').select('id'),
+    supabase
+      .from('actividades_territoriales')
+      .select('id, area_id, tipo_actividad, estado, areas:area_id(nombre)')
+      .eq('estado', 'registrada'),
   ]);
 
   if (errPerfiles) {
@@ -86,6 +102,7 @@ export async function getTableroControlData(): Promise<TableroData> {
   const documentos: any[] = docsData || [];
   const solicitudes: any[] = solicitudesData || [];
   const capRealizadas: any[] = capRealizadasData || [];
+  const actividades: any[] = actividadesData || [];
 
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
@@ -130,7 +147,41 @@ export async function getTableroControlData(): Promise<TableroData> {
       ['enviada', 'en_coordinacion', 'derivada_area', 'aprobada_area'].includes(s.estado)
     ).length,
     antecedentesAlDiaPct: activosCount > 0 ? Math.round((antecedentesAlDia / activosCount) * 100) : 0,
+    actividadesTerritorialesCount: actividades.length,
   };
+
+  // ================= Actividades Territoriales: distribución =================
+  // Solo actividades 'registrada' (ya filtrado en la consulta) — una
+  // anulada no debería contar para estadísticas institucionales.
+  const agrupar = (clave: (a: any) => string, label: (a: any) => string): DistribucionItem[] => {
+    const mapa = new Map<string, { label: string; cantidad: number }>();
+    for (const a of actividades) {
+      const k = clave(a);
+      const prev = mapa.get(k);
+      if (prev) prev.cantidad += 1;
+      else mapa.set(k, { label: label(a), cantidad: 1 });
+    }
+    const total = actividades.length;
+    return Array.from(mapa.entries())
+      .map(([k, v]) => ({
+        clave: k,
+        label: v.label,
+        cantidad: v.cantidad,
+        porcentaje: total > 0 ? Math.round((v.cantidad / total) * 100) : 0,
+      }))
+      .sort((a, b) => b.cantidad - a.cantidad);
+  };
+
+  const labelTipo = (tipo: TipoActividad) => TIPOS_ACTIVIDAD.find((t) => t.id === tipo)?.label || tipo;
+
+  const actividadesPorArea = agrupar(
+    (a) => a.area_id,
+    (a) => a.areas?.nombre || 'Área sin nombre'
+  );
+  const actividadesPorTipo = agrupar(
+    (a) => a.tipo_actividad,
+    (a) => labelTipo(a.tipo_actividad)
+  );
 
   // ================= Cobertura por Sub-Sede =================
   // % real de documentos obligatorios validados sobre el total esperado
@@ -217,6 +268,8 @@ export async function getTableroControlData(): Promise<TableroData> {
     coberturaSubSedes,
     solicitudesRecientes,
     alertasCriticas,
+    actividadesPorArea,
+    actividadesPorTipo,
     subSedes: subsedes,
     perfiles: perfiles as Profile[],
   };

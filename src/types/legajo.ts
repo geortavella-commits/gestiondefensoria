@@ -31,6 +31,7 @@ export interface Area {
   es_coordinadora_subsedes?: boolean;
   atiende_capacitaciones?: boolean;
   recibe_notas_pedido?: boolean;
+  recibe_derivaciones_pedido?: boolean;
 }
 
 export interface Profile {
@@ -50,6 +51,7 @@ export interface Profile {
   avatar_url: string | null;
   perfil_completo: boolean;
   observaciones_legajo: string | null;
+  dias_vacaciones_anuales: number | null;
   created_at: string;
   updated_at: string;
   // Joins
@@ -88,6 +90,21 @@ export interface DocumentoConCatalogo {
   estadoDerivado: 'vencido' | 'por_vencer' | 'aprobado' | 'cargado' | 'pendiente' | 'rechazado';
   diasDiferencia: number | null;
   badgeTexto: string;
+}
+
+export type Parentesco = 'conyuge_conviviente' | 'hijo_a' | 'otro';
+
+export interface FamiliarPersonal {
+  id: string;
+  profile_id: string;
+  nombre: string;
+  apellido: string;
+  dni: string | null;
+  parentesco: Parentesco;
+  foto_dni_frente_path: string | null; // path en el bucket privado documentos-familiares, no una URL
+  foto_dni_dorso_path: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface CapacitacionAgente {

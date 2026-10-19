@@ -96,6 +96,7 @@ export async function updateUsuarioAdmin(
     sub_sede_id?: string | null;
     area_id?: string | null;
     cargo?: string | null;
+    dias_vacaciones_anuales?: number | null;
   }
 ): Promise<Profile> {
   const { data, error } = await supabase

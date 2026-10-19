@@ -1,14 +1,16 @@
 import React from 'react';
 
-export type MainNavSection = 'tablero' | 'personal' | 'subsedes' | 'capacitaciones' | 'notas' | 'documentacion' | 'reportes' | 'configuracion';
+export type MainNavSection = 'tablero' | 'personal' | 'subsedes' | 'capacitaciones' | 'actividades' | 'notas' | 'vacaciones' | 'documentacion' | 'reportes' | 'configuracion';
 
 interface Props {
   activeSection: MainNavSection;
   onNavigate: (section: MainNavSection) => void;
   onLogout?: () => void;
+  visibleSections: MainNavSection[];
 }
 
-export const Sidebar: React.FC<Props> = ({ activeSection, onNavigate, onLogout }) => {
+export const Sidebar: React.FC<Props> = ({ activeSection, onNavigate, onLogout, visibleSections }) => {
+  const ver = (section: MainNavSection) => visibleSections.includes(section);
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 z-50 flex flex-col justify-between py-space-md px-space-sm bg-surface-container-lowest dark:bg-surface border-r border-outline-variant dark:border-outline shadow-sm">
       <div className="flex flex-col gap-y-4">
@@ -28,6 +30,7 @@ export const Sidebar: React.FC<Props> = ({ activeSection, onNavigate, onLogout }
         {/* Navigation Links */}
         <nav className="flex flex-col gap-1 mt-2">
           {/* 1. Tablero de Control */}
+          {ver('tablero') && (
           <button
             onClick={() => onNavigate('tablero')}
             className={`flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-left transition-colors duration-150 ${
@@ -39,8 +42,10 @@ export const Sidebar: React.FC<Props> = ({ activeSection, onNavigate, onLogout }
             <span className="material-symbols-outlined text-[20px]">dashboard</span>
             <span>Tablero de Control</span>
           </button>
+          )}
 
           {/* 2. Personal & Legajos */}
+          {ver('personal') && (
           <button
             onClick={() => onNavigate('personal')}
             className={`flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-left transition-colors duration-150 ${
@@ -57,8 +62,10 @@ export const Sidebar: React.FC<Props> = ({ activeSection, onNavigate, onLogout }
             </span>
             <span className={activeSection === 'personal' ? 'font-semibold' : ''}>Personal &amp; Legajos</span>
           </button>
+          )}
 
           {/* 3. Sub-Sedes Territoriales */}
+          {ver('subsedes') && (
           <button
             onClick={() => onNavigate('subsedes')}
             className={`flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-left transition-colors duration-150 ${
@@ -70,8 +77,10 @@ export const Sidebar: React.FC<Props> = ({ activeSection, onNavigate, onLogout }
             <span className="material-symbols-outlined text-[20px]">domain</span>
             <span>Sub-Sedes Territoriales</span>
           </button>
+          )}
 
           {/* 4. Talleres & Capacitaciones */}
+          {ver('capacitaciones') && (
           <button
             onClick={() => onNavigate('capacitaciones')}
             className={`flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-left transition-colors duration-150 ${
@@ -83,8 +92,25 @@ export const Sidebar: React.FC<Props> = ({ activeSection, onNavigate, onLogout }
             <span className="material-symbols-outlined text-[20px]">school</span>
             <span>Talleres &amp; Capacitaciones</span>
           </button>
+          )}
+
+          {/* Actividades Territoriales */}
+          {ver('actividades') && (
+          <button
+            onClick={() => onNavigate('actividades')}
+            className={`flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-left transition-colors duration-150 ${
+              activeSection === 'actividades'
+                ? 'bg-surface-container text-primary font-label-lg border-l-4 border-secondary'
+                : 'text-on-surface-variant hover:bg-surface-container font-label-md'
+            }`}
+          >
+            <span className="material-symbols-outlined text-[20px]">groups</span>
+            <span>Actividades Territoriales</span>
+          </button>
+          )}
 
           {/* Notas de Pedido */}
+          {ver('notas') && (
           <button
             onClick={() => onNavigate('notas')}
             className={`flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-left transition-colors duration-150 ${
@@ -96,8 +122,30 @@ export const Sidebar: React.FC<Props> = ({ activeSection, onNavigate, onLogout }
             <span className="material-symbols-outlined text-[20px]">request_quote</span>
             <span>Notas de Pedido</span>
           </button>
+          )}
+
+          {/* Vacaciones */}
+          {ver('vacaciones') && (
+          <button
+            onClick={() => onNavigate('vacaciones')}
+            className={`flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-left transition-colors duration-150 ${
+              activeSection === 'vacaciones'
+                ? 'bg-surface-container text-primary font-label-lg border-l-4 border-secondary'
+                : 'text-on-surface-variant hover:bg-surface-container font-label-md'
+            }`}
+          >
+            <span
+              className={`material-symbols-outlined text-[20px] ${activeSection === 'vacaciones' ? 'text-secondary' : ''}`}
+              style={{ fontVariationSettings: activeSection === 'vacaciones' ? "'FILL' 1" : "'FILL' 0" }}
+            >
+              beach_access
+            </span>
+            <span className={activeSection === 'vacaciones' ? 'font-semibold' : ''}>Vacaciones</span>
+          </button>
+          )}
 
           {/* 5. Documentación & Alertas */}
+          {ver('documentacion') && (
           <button
             onClick={() => onNavigate('documentacion')}
             className={`flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-left transition-colors duration-150 ${
@@ -109,8 +157,10 @@ export const Sidebar: React.FC<Props> = ({ activeSection, onNavigate, onLogout }
             <span className="material-symbols-outlined text-[20px]">warning</span>
             <span>Documentación &amp; Alertas</span>
           </button>
+          )}
 
           {/* 6. Reportes Institucionales */}
+          {ver('reportes') && (
           <button
             onClick={() => onNavigate('reportes')}
             className={`flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-left transition-colors duration-150 ${
@@ -122,8 +172,10 @@ export const Sidebar: React.FC<Props> = ({ activeSection, onNavigate, onLogout }
             <span className="material-symbols-outlined text-[20px]">bar_chart</span>
             <span>Reportes Institucionales</span>
           </button>
+          )}
 
           {/* 7. Configuración / Gestión de Usuarios */}
+          {ver('configuracion') && (
           <button
             onClick={() => onNavigate('configuracion')}
             className={`flex items-center gap-space-sm px-space-md py-space-sm rounded-lg text-left transition-colors duration-150 ${
@@ -140,6 +192,7 @@ export const Sidebar: React.FC<Props> = ({ activeSection, onNavigate, onLogout }
             </span>
             <span className={activeSection === 'configuracion' ? 'font-semibold' : ''}>Configuración</span>
           </button>
+          )}
         </nav>
       </div>
 

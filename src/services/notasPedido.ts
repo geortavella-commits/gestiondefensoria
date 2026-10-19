@@ -1,8 +1,9 @@
 import { supabase } from './supabaseClient';
 import type { Area } from '../types/legajo';
 
-export type EstadoNota = 'borrador' | 'enviada' | 'recibida' | 'observada' | 'aprobada' | 'cancelada';
+export type EstadoNota = 'borrador' | 'enviada' | 'recibida' | 'observada' | 'aprobada' | 'aprobada_parcial' | 'cancelada';
 export type CategoriaItem = 'material' | 'servicio' | 'infraestructura';
+export type EstadoItem = 'pendiente' | 'aprobado' | 'rechazado' | 'anulado';
 
 export const CATEGORIAS: { id: CategoriaItem; label: string }[] = [
   { id: 'material', label: 'Materiales' },
@@ -22,6 +23,16 @@ export interface ItemNota {
   proveedor_cuit: string | null;
   proveedor_contacto: string | null;
   orden?: number;
+  // Aprobación y entrega por ítem (independiente del estado general de la nota)
+  estado_item?: EstadoItem;
+  motivo_rechazo?: string | null;
+  revisado_por?: string | null;
+  revisado_at?: string | null;
+  entregado?: boolean;
+  entregado_at?: string | null;
+  entregado_por?: string | null;
+  anulado_por?: string | null;
+  anulado_at?: string | null;
 }
 
 export interface HistorialNota {
@@ -83,6 +94,17 @@ const SELECT_DETALLE = `
   items:notas_pedido_items ( * ),
   historial:notas_pedido_historial ( id, estado, comentario, created_at, profile:profile_id ( nombre, apellido ) )
 `;
+
+/** Notas de un área puntual, para vincular una actividad territorial a una nota existente. */
+export async function listarNotasDeArea(areaId: string): Promise<{ id: string; numero: string | null; descripcion: string | null }[]> {
+  const { data, error } = await supabase
+    .from('notas_pedido')
+    .select('id, numero, descripcion')
+    .eq('area_id', areaId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
 
 export async function listarNotas(): Promise<{ notas: NotaPedido[]; areas: Area[] }> {
   const [{ data, error }, { data: areas, error: errAreas }] = await Promise.all([
@@ -163,13 +185,68 @@ async function cambiarEstado(id: string, patch: Record<string, unknown>) {
 
 export const enviarNota = (id: string) => cambiarEstado(id, { estado: 'enviada' });
 export const recibirNota = (id: string) => cambiarEstado(id, { estado: 'recibida' });
-export const aprobarNota = (id: string, comentario: string) =>
-  cambiarEstado(id, { estado: 'aprobada', comentario_revision: comentario.trim() || null });
-export const observarNota = (id: string, comentario: string) =>
-  cambiarEstado(id, { estado: 'observada', comentario_revision: comentario.trim() });
 export const cancelarNota = (id: string) => cambiarEstado(id, { estado: 'cancelada' });
 
 export async function eliminarBorrador(id: string) {
   const { error } = await supabase.from('notas_pedido').delete().eq('id', id);
+  if (error) throw error;
+}
+
+/**
+ * Edita el contenido de UN ítem puntual (no borra ni recrea los demás, a
+ * diferencia de `guardarNota`). Pensado para que el área corrija un ítem
+ * rechazado: el trigger de la base lo vuelve a 'pendiente' solo y la nota
+ * vuelve sola a 'recibida' para que Administración lo mire de nuevo. Un
+ * ítem ya 'aprobado' no se puede tocar — el trigger lo rechaza.
+ */
+export async function editarItemNota(
+  itemId: string,
+  datos: Partial<Pick<ItemNota, 'categoria' | 'descripcion' | 'cantidad' | 'precio_unitario' | 'observacion'>>
+): Promise<void> {
+  const { error } = await supabase.from('notas_pedido_items').update(datos).eq('id', itemId);
+  if (error) throw error;
+}
+
+/**
+ * Administración/gestión aprueba o rechaza UN ítem (estado 'recibida' de la
+ * nota). El estado general de la nota se recalcula solo: todos aprobados ->
+ * 'aprobada', todos rechazados -> 'observada', mezcla -> 'aprobada_parcial'.
+ */
+export async function aprobarItem(itemId: string): Promise<void> {
+  const { error } = await supabase.from('notas_pedido_items').update({ estado_item: 'aprobado' }).eq('id', itemId);
+  if (error) throw error;
+}
+
+export async function rechazarItem(itemId: string, motivo: string): Promise<void> {
+  if (!motivo || !motivo.trim()) throw new Error('El motivo de rechazo del ítem es obligatorio');
+  const { error } = await supabase
+    .from('notas_pedido_items')
+    .update({ estado_item: 'rechazado', motivo_rechazo: motivo.trim() })
+    .eq('id', itemId);
+  if (error) throw error;
+}
+
+/**
+ * El área da de baja un ítem rechazado en vez de corregirlo (ej: ya no lo
+ * necesita, o no tiene forma de ajustarlo al motivo del rechazo). Es
+ * terminal: un ítem anulado no se puede volver a editar. La nota avanza
+ * considerando solo los ítems no anulados — si eran los únicos pendientes,
+ * la nota puede terminar en 'aprobada' (si el resto estaba aprobado) o
+ * 'cancelada' (si no queda ningún ítem vigente).
+ */
+export async function anularItem(itemId: string): Promise<void> {
+  const { error } = await supabase.from('notas_pedido_items').update({ estado_item: 'anulado' }).eq('id', itemId);
+  if (error) throw error;
+}
+
+/** Atajo: aprueba de una todos los ítems pendientes de la nota. */
+export async function aprobarTodosLosItems(notaId: string): Promise<void> {
+  const { error } = await supabase.rpc('aprobar_todos_los_items_nota', { p_nota_id: notaId });
+  if (error) throw error;
+}
+
+/** Marcar/desmarcar la entrega de un ítem. Solo sobre un ítem ya aprobado. */
+export async function marcarItemEntregado(itemId: string, entregado: boolean): Promise<void> {
+  const { error } = await supabase.from('notas_pedido_items').update({ entregado }).eq('id', itemId);
   if (error) throw error;
 }

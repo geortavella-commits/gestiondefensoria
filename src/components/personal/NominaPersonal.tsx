@@ -5,16 +5,26 @@ import {
   type AgenteNominaItem,
 } from '../../services/nomina';
 
+interface FiltroForzado {
+  areaNombre?: string | null;
+  subSedeId?: string | null;
+  etiqueta: string;
+}
+
 interface Props {
   onVerLegajo: (profileId: string) => void;
   onCrearAgente: () => void;
   onEditarAgente?: (profileId: string) => void;
+  // Cuando viene de la vista previa de rol: bloquea los filtros de área/sub-sede
+  // a lo que ese rol vería de verdad, para no mostrar el listado completo.
+  filtroForzado?: FiltroForzado | null;
 }
 
 export const NominaPersonal: React.FC<Props> = ({
   onVerLegajo,
   onCrearAgente,
   onEditarAgente,
+  filtroForzado,
 }) => {
   const [data, setData] = useState<NominaData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -30,6 +40,12 @@ export const NominaPersonal: React.FC<Props> = ({
   // Paginación
   const [paginaActual, setPaginaActual] = useState(1);
   const [filasPorPagina, setFilasPorPagina] = useState(10);
+
+  useEffect(() => {
+    setFiltroSubSede(filtroForzado?.subSedeId || 'all');
+    setFiltroArea(filtroForzado?.areaNombre || 'all');
+    setPaginaActual(1);
+  }, [filtroForzado]);
 
   // Modales
   const [agenteParaNotificar, setAgenteParaNotificar] = useState<AgenteNominaItem | null>(null);
@@ -319,13 +335,20 @@ export const NominaPersonal: React.FC<Props> = ({
             <span className="material-symbols-outlined text-[20px] text-secondary">filter_alt</span>
             <span>Filtros Paramétricos de Búsqueda</span>
           </div>
-          <button
-            onClick={handleLimpiarFiltros}
-            className="text-secondary hover:text-primary font-label-md text-label-md flex items-center gap-1 transition-colors font-semibold"
-          >
-            <span className="material-symbols-outlined text-[16px]">refresh</span>
-            <span>Limpiar Filtros</span>
-          </button>
+          {filtroForzado ? (
+            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 text-label-sm font-label-sm font-bold">
+              <span className="material-symbols-outlined text-[16px]">visibility</span>
+              Vista previa: {filtroForzado.etiqueta}
+            </span>
+          ) : (
+            <button
+              onClick={handleLimpiarFiltros}
+              className="text-secondary hover:text-primary font-label-md text-label-md flex items-center gap-1 transition-colors font-semibold"
+            >
+              <span className="material-symbols-outlined text-[16px]">refresh</span>
+              <span>Limpiar Filtros</span>
+            </button>
+          )}
         </div>
 
         {/* Inputs Row */}
@@ -363,11 +386,12 @@ export const NominaPersonal: React.FC<Props> = ({
               </span>
               <select
                 value={filtroSubSede}
+                disabled={!!filtroForzado}
                 onChange={(e) => {
                   setFiltroSubSede(e.target.value);
                   setPaginaActual(1);
                 }}
-                className="w-full h-10 pl-9 pr-8 rounded-lg border border-outline-variant bg-surface-container-lowest font-body-sm text-body-sm focus:border-secondary focus:ring-1 focus:ring-secondary focus:outline-none appearance-none"
+                className="w-full h-10 pl-9 pr-8 rounded-lg border border-outline-variant bg-surface-container-lowest font-body-sm text-body-sm focus:border-secondary focus:ring-1 focus:ring-secondary focus:outline-none appearance-none disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <option value="all">Todas las Sedes</option>
                 {subSedes.map((s) => (
@@ -393,11 +417,12 @@ export const NominaPersonal: React.FC<Props> = ({
               </span>
               <select
                 value={filtroArea}
+                disabled={!!filtroForzado}
                 onChange={(e) => {
                   setFiltroArea(e.target.value);
                   setPaginaActual(1);
                 }}
-                className="w-full h-10 pl-9 pr-8 rounded-lg border border-outline-variant bg-surface-container-lowest font-body-sm text-body-sm focus:border-secondary focus:ring-1 focus:ring-secondary focus:outline-none appearance-none"
+                className="w-full h-10 pl-9 pr-8 rounded-lg border border-outline-variant bg-surface-container-lowest font-body-sm text-body-sm focus:border-secondary focus:ring-1 focus:ring-secondary focus:outline-none appearance-none disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <option value="all">Todas las Áreas</option>
                 <option value="legal">Equipo Legal</option>

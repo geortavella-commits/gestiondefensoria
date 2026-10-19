@@ -6,6 +6,7 @@ import {
   type UsuariosStats,
 } from '../../services/usuarios';
 import { CrearUsuarioModal } from './CrearUsuarioModal';
+import { CargaMasivaModal } from './CargaMasivaModal';
 import type { Profile, SubSede, Area, RolUsuario, EstadoUsuario } from '../../types/legajo';
 
 interface Props {
@@ -40,11 +41,13 @@ export const GestionUsuarios: React.FC<Props> = ({ onVerLegajo }) => {
   const [drawerRol, setDrawerRol] = useState<RolUsuario>('personal');
   const [drawerSubSedeId, setDrawerSubSedeId] = useState<string>('');
   const [drawerAreaId, setDrawerAreaId] = useState<string>('');
+  const [drawerDiasVacaciones, setDrawerDiasVacaciones] = useState<string>('');
   const [savingDrawer, setSavingDrawer] = useState(false);
   const [drawerMsg, setDrawerMsg] = useState<string | null>(null);
 
   // Modal para crear usuario
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCargaMasivaOpen, setIsCargaMasivaOpen] = useState(false);
 
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
@@ -80,6 +83,7 @@ export const GestionUsuarios: React.FC<Props> = ({ onVerLegajo }) => {
     setDrawerRol(u.rol);
     setDrawerSubSedeId(u.sub_sede_id || '');
     setDrawerAreaId(u.area_id || '');
+    setDrawerDiasVacaciones(u.dias_vacaciones_anuales != null ? String(u.dias_vacaciones_anuales) : '');
     setDrawerMsg(null);
   };
 
@@ -88,11 +92,13 @@ export const GestionUsuarios: React.FC<Props> = ({ onVerLegajo }) => {
     try {
       setSavingDrawer(true);
       setDrawerMsg(null);
+      const diasVacaciones = drawerDiasVacaciones.trim() === '' ? null : Number(drawerDiasVacaciones);
       const updated = await updateUsuarioAdmin(selectedUser.id, {
         estado: drawerEstado,
         rol: drawerRol,
         sub_sede_id: drawerSubSedeId || null,
         area_id: drawerAreaId || null,
+        dias_vacaciones_anuales: diasVacaciones,
       });
 
       setSelectedUser(updated);
@@ -221,6 +227,14 @@ export const GestionUsuarios: React.FC<Props> = ({ onVerLegajo }) => {
             >
               <span className="material-symbols-outlined text-[18px]">download</span>
               <span>Exportar Auditoría de Accesos</span>
+            </button>
+            <button
+              onClick={() => setIsCargaMasivaOpen(true)}
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-outline-variant bg-surface-container-lowest hover:bg-surface-container-low text-primary font-label-md text-label-md transition-colors duration-150 shadow-sm"
+              type="button"
+            >
+              <span className="material-symbols-outlined text-[18px]">group_add</span>
+              <span>Carga Masiva</span>
             </button>
             <button
               onClick={() => setIsCreateModalOpen(true)}
@@ -746,6 +760,25 @@ export const GestionUsuarios: React.FC<Props> = ({ onVerLegajo }) => {
                   </select>
                 </div>
 
+                {/* Días de Vacaciones Anuales */}
+                <div className="flex flex-col gap-1.5">
+                  <label className="font-label-sm text-label-sm text-primary font-semibold">
+                    Días de Vacaciones Anuales
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={drawerDiasVacaciones}
+                    onChange={(e) => setDrawerDiasVacaciones(e.target.value)}
+                    placeholder="Sin cargar"
+                    className="w-full h-10 px-3 rounded-lg bg-surface border border-outline-variant text-on-surface font-body-sm text-body-sm focus:border-secondary focus:ring-1 focus:ring-secondary focus:outline-none"
+                  />
+                  <span className="text-[11px] text-outline">
+                    Total de días hábiles que le corresponden por año. Vacío = todavía no se le asignó cupo.
+                  </span>
+                </div>
+
                 {/* Acciones */}
                 <div className="flex flex-col sm:flex-row gap-2 pt-3">
                   <button
@@ -795,6 +828,15 @@ export const GestionUsuarios: React.FC<Props> = ({ onVerLegajo }) => {
         subSedes={subSedes}
         areas={areas}
         onUserCreated={loadData}
+      />
+
+      {/* Modal Carga Masiva */}
+      <CargaMasivaModal
+        isOpen={isCargaMasivaOpen}
+        onClose={() => setIsCargaMasivaOpen(false)}
+        subSedes={subSedes}
+        areas={areas}
+        onUsuariosCreados={loadData}
       />
     </div>
   );

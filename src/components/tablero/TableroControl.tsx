@@ -13,6 +13,7 @@ interface Props {
   onNavigateToDocumentacion?: () => void;
   onNavigateToReportes?: () => void;
   onNuevoAgente?: () => void;
+  onNavigateToActividades?: () => void;
 }
 
 export const TableroControl: React.FC<Props> = ({
@@ -22,6 +23,7 @@ export const TableroControl: React.FC<Props> = ({
   onNavigateToDocumentacion,
   onNavigateToReportes,
   onNuevoAgente,
+  onNavigateToActividades,
 }) => {
   const [data, setData] = useState<TableroData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -98,7 +100,14 @@ export const TableroControl: React.FC<Props> = ({
     );
   }
 
-  const { kpis, coberturaSubSedes, solicitudesRecientes, alertasCriticas } = data;
+  const {
+    kpis,
+    coberturaSubSedes,
+    solicitudesRecientes,
+    alertasCriticas,
+    actividadesPorArea = [],
+    actividadesPorTipo = [],
+  } = data;
 
   const fechaHoyStr = new Date().toLocaleDateString('es-AR', {
     weekday: 'long',
@@ -188,8 +197,8 @@ export const TableroControl: React.FC<Props> = ({
         </button>
       </div>
 
-      {/* 4 TARJETAS DE MÉTRICAS (KPIs) */}
-      <section aria-label="Indicadores Clave de Desempeño" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 5 TARJETAS DE MÉTRICAS (KPIs) */}
+      <section aria-label="Indicadores Clave de Desempeño" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         {/* KPI 1: Personal Activo */}
         <div
           onClick={onNavigateToPersonal}
@@ -287,6 +296,31 @@ export const TableroControl: React.FC<Props> = ({
             <span>{kpis.solicitudesEnCurso} solicitudes en curso</span>
           </div>
         </div>
+
+        {/* KPI 5: Actividades Territoriales */}
+        <div
+          onClick={onNavigateToActividades}
+          className={`bg-surface-container-lowest border border-outline-variant rounded-xl p-4 shadow-sm flex flex-col justify-between hover:border-secondary transition-all group ${
+            onNavigateToActividades ? 'cursor-pointer' : ''
+          }`}
+        >
+          <div className="flex items-center justify-between">
+            <span className="font-label-md text-label-md text-outline">Actividades Territoriales</span>
+            <span className="p-1.5 rounded-lg bg-surface-container-low text-secondary">
+              <span className="material-symbols-outlined text-[20px]">groups</span>
+            </span>
+          </div>
+          <div className="my-2">
+            <span className="font-headline-lg text-headline-lg font-bold text-primary">
+              {kpis.actividadesTerritorialesCount ?? 0}
+            </span>
+            <span className="font-body-sm text-body-sm text-outline ml-1">registradas</span>
+          </div>
+          <div className="flex items-center gap-1.5 font-label-sm text-label-sm text-secondary">
+            <span className="material-symbols-outlined text-sm">location_on</span>
+            <span>{actividadesPorArea.length} áreas con actividad</span>
+          </div>
+        </div>
       </section>
 
       {/* SECCIÓN PRINCIPAL: 2 COLUMNAS (2/3 Izquierda, 1/3 Derecha) */}
@@ -343,6 +377,131 @@ export const TableroControl: React.FC<Props> = ({
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Distribución de Actividades Territoriales por Área y Tipo */}
+          <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-space-md shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-space-sm border-b border-outline-variant mb-space-md gap-2">
+              <div>
+                <h2 className="font-headline-sm text-headline-sm text-primary font-bold">
+                  Actividades Territoriales
+                </h2>
+                <p className="font-body-sm text-body-sm text-on-surface-variant">
+                  Distribución institucional por área y modalidad de intervención
+                </p>
+              </div>
+              {onNavigateToActividades && (
+                <button
+                  onClick={onNavigateToActividades}
+                  className="text-secondary font-label-md text-label-md hover:underline flex items-center gap-1 font-semibold self-start sm:self-auto"
+                >
+                  <span>Ver todas</span>
+                  <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Bloque 1: Actividades por Área */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-label-md text-label-md text-primary font-bold flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[18px] text-secondary">apartment</span>
+                    <span>Actividades por Área</span>
+                  </h3>
+                  <span className="text-label-sm font-label-sm text-outline">
+                    {actividadesPorArea.length} {actividadesPorArea.length === 1 ? 'área' : 'áreas'}
+                  </span>
+                </div>
+
+                {actividadesPorArea.length === 0 ? (
+                  <div className="p-6 text-center text-outline bg-surface-container-low rounded-xl border border-dashed border-outline-variant flex flex-col items-center justify-center gap-2">
+                    <span className="material-symbols-outlined text-[28px]">pending_actions</span>
+                    <span className="text-body-sm font-medium">Todavía no hay actividades registradas</span>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {actividadesPorArea.map((item) => (
+                      <div
+                        key={item.clave}
+                        className={onNavigateToActividades ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}
+                        onClick={onNavigateToActividades}
+                      >
+                        <div className="flex justify-between items-center mb-1">
+                          <div className="flex items-center gap-2 truncate">
+                            <span className="font-label-md text-label-md text-primary font-bold truncate">
+                              {item.label}
+                            </span>
+                            <span className="text-label-sm font-label-sm px-2 py-0.5 rounded bg-surface-container text-on-surface font-normal">
+                              {item.cantidad} {item.cantidad === 1 ? 'Actividad' : 'Actividades'}
+                            </span>
+                          </div>
+                          <span className="font-label-md text-label-md font-bold text-primary">
+                            {item.porcentaje}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-surface-container rounded-full h-3 overflow-hidden flex">
+                          <div
+                            className="h-3 rounded-full bg-secondary transition-all duration-700"
+                            style={{ width: `${item.porcentaje}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Bloque 2: Actividades por Tipo */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-label-md text-label-md text-primary font-bold flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-[18px] text-secondary">category</span>
+                    <span>Actividades por Tipo</span>
+                  </h3>
+                  <span className="text-label-sm font-label-sm text-outline">
+                    {actividadesPorTipo.length} {actividadesPorTipo.length === 1 ? 'tipo' : 'tipos'}
+                  </span>
+                </div>
+
+                {actividadesPorTipo.length === 0 ? (
+                  <div className="p-6 text-center text-outline bg-surface-container-low rounded-xl border border-dashed border-outline-variant flex flex-col items-center justify-center gap-2">
+                    <span className="material-symbols-outlined text-[28px]">pending_actions</span>
+                    <span className="text-body-sm font-medium">Todavía no hay actividades registradas</span>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {actividadesPorTipo.map((item) => (
+                      <div
+                        key={item.clave}
+                        className={onNavigateToActividades ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}
+                        onClick={onNavigateToActividades}
+                      >
+                        <div className="flex justify-between items-center mb-1">
+                          <div className="flex items-center gap-2 truncate">
+                            <span className="font-label-md text-label-md text-primary font-bold truncate">
+                              {item.label}
+                            </span>
+                            <span className="text-label-sm font-label-sm px-2 py-0.5 rounded bg-surface-container text-on-surface font-normal">
+                              {item.cantidad} {item.cantidad === 1 ? 'Actividad' : 'Actividades'}
+                            </span>
+                          </div>
+                          <span className="font-label-md text-label-md font-bold text-primary">
+                            {item.porcentaje}%
+                          </span>
+                        </div>
+                        <div className="w-full bg-surface-container rounded-full h-3 overflow-hidden flex">
+                          <div
+                            className="h-3 rounded-full bg-secondary transition-all duration-700"
+                            style={{ width: `${item.porcentaje}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

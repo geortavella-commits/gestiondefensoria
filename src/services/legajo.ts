@@ -16,7 +16,7 @@ export async function getPerfilAgente(profileId: string): Promise<Profile> {
     .select(`
       *,
       sub_sedes:sub_sede_id ( id, nombre, direccion, localidad, telefono, activo ),
-      areas:area_id ( id, nombre, descripcion, activo )
+      areas:area_id ( id, nombre, descripcion, activo, es_coordinadora_subsedes, atiende_capacitaciones, recibe_notas_pedido )
     `)
     .eq('id', profileId)
     .single();
@@ -51,7 +51,7 @@ export async function getListaPerfiles(): Promise<Profile[]> {
       created_at,
       updated_at,
       sub_sedes:sub_sede_id ( id, nombre, localidad ),
-      areas:area_id ( id, nombre )
+      areas:area_id ( id, nombre, es_coordinadora_subsedes, atiende_capacitaciones, recibe_notas_pedido )
     `)
     .order('apellido', { ascending: true });
 
@@ -232,4 +232,32 @@ export async function getSignedUrlDocumento(archivoPath: string, expiresInSecond
 
 export function esRolGestion(rol?: RolUsuario | null): boolean {
   return rol === 'coordinacion_general' || rol === 'administrador';
+}
+
+/**
+ * Aprueba o rechaza un documento cargado. Quién puede hacerlo lo decide la
+ * policy `documentos_update` en la base (gestión, jefe del área del agente o
+ * referente de su sub-sede) — acá no se repite esa lógica, si no tenés
+ * permiso el UPDATE no afecta filas y se corta con error.
+ */
+export async function validarDocumento(
+  documentoId: string,
+  revisorId: string,
+  nuevoEstado: 'aprobado' | 'rechazado',
+  comentarios?: string | null
+): Promise<DocumentoPersonal> {
+  const { data, error } = await supabase
+    .from('documentos_personal')
+    .update({
+      estado: nuevoEstado,
+      revisado_por: revisorId,
+      fecha_revision: new Date().toISOString(),
+      comentarios: comentarios || null,
+    })
+    .eq('id', documentoId)
+    .select('*, tipos_documento (*)')
+    .single();
+
+  if (error) throw error;
+  return data as DocumentoPersonal;
 }

@@ -1,12 +1,25 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 
-const jsonHeaders = { 'Content-Type': 'application/json' };
+// Sin esto, el navegador bloquea el pedido en el preflight (OPTIONS) antes de
+// que llegue al servidor: supabase-js lo reporta como "Failed to send a
+// request to the Edge Function" y nada se ejecuta del otro lado.
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
+const jsonHeaders = { 'Content-Type': 'application/json', ...corsHeaders };
 
 function jsonResponse(body: unknown, status: number) {
   return new Response(JSON.stringify(body), { status, headers: jsonHeaders });
 }
 
 Deno.serve(async (req: Request) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
   if (req.method !== 'POST') {
     return jsonResponse({ error: 'Método no permitido' }, 405);
   }
@@ -51,9 +64,23 @@ Deno.serve(async (req: Request) => {
     return jsonResponse({ error: 'Body inválido' }, 400);
   }
 
-  const { nombreCompleto, dni, email, password, rol, cargo, legajo, areaId, subSedeId } = body as {
+  const {
+    nombreCompleto,
+    nombre: nombreDirecto,
+    apellido: apellidoDirecto,
+    dni,
+    email,
+    password,
+    rol,
+    cargo,
+    legajo,
+    areaId,
+    subSedeId,
+  } = body as {
     nombreCompleto?: string;
-    dni?: string;
+    nombre?: string;
+    apellido?: string;
+    dni?: string | null;
     email?: string;
     password?: string;
     rol?: string;
@@ -63,23 +90,32 @@ Deno.serve(async (req: Request) => {
     subSedeId?: string | null;
   };
 
-  if (!nombreCompleto || !dni || !email || !password) {
-    return jsonResponse({ error: 'Faltan campos obligatorios (nombre, DNI, email, contraseña)' }, 400);
+  // Preferimos nombre/apellido ya separados (evita adivinar mal apellidos
+  // compuestos como "Bett Roman" o "Toro Gutierrez"). Si no vienen, se separa
+  // nombreCompleto asumiendo que la última palabra es el apellido, como antes.
+  let nombre = nombreDirecto?.trim();
+  let apellido = apellidoDirecto?.trim();
+
+  if (!nombre && !apellido && nombreCompleto?.trim()) {
+    const parts = nombreCompleto.trim().split(' ').filter(Boolean);
+    nombre = parts.length > 1 ? parts.slice(0, -1).join(' ') : parts[0];
+    apellido = parts.length > 1 ? parts[parts.length - 1] : '';
+  }
+
+  if (!nombre || !apellido || !email || !password) {
+    return jsonResponse({ error: 'Faltan campos obligatorios (nombre, apellido, email, contraseña)' }, 400);
   }
 
   const rolesValidos = ['coordinacion_general', 'administrador', 'jefe_area', 'referente_subsede', 'personal'];
   const rolFinal = rolesValidos.includes(rol ?? '') ? (rol as string) : 'personal';
-
-  const parts = nombreCompleto.trim().split(' ').filter(Boolean);
-  const nombre = parts.length > 1 ? parts.slice(0, -1).join(' ') : parts[0];
-  const apellido = parts.length > 1 ? parts[parts.length - 1] : '';
+  const dniLimpio = dni?.trim() || null;
 
   // 4. Crear el usuario en Auth (confirmado directamente: lo está dando de alta gestión)
   const { data: created, error: createError } = await adminClient.auth.admin.createUser({
     email: email.trim(),
     password,
     email_confirm: true,
-    user_metadata: { nombre, apellido, dni: dni.trim() },
+    user_metadata: { nombre, apellido, dni: dniLimpio },
   });
 
   if (createError || !created.user) {

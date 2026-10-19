@@ -15,6 +15,7 @@ interface Props {
   perfilActual: Profile;
   areaNombre: string;
   notaId?: string;
+  descripcionInicial?: string; // precarga (ej. al crear la nota a partir de una derivación de sub-sede)
   onVolver: () => void;
   onGuardada: (id: string) => void;
 }
@@ -47,9 +48,16 @@ const tieneProveedor = (it: ItemNota) =>
 const inputCls =
   'w-full px-2.5 py-1.5 bg-surface-container-lowest border border-outline-variant rounded-lg text-body-sm focus:outline-none focus:border-secondary';
 
-export const NotaPedidoForm: React.FC<Props> = ({ perfilActual, areaNombre, notaId, onVolver, onGuardada }) => {
+export const NotaPedidoForm: React.FC<Props> = ({
+  perfilActual,
+  areaNombre,
+  notaId,
+  descripcionInicial,
+  onVolver,
+  onGuardada,
+}) => {
   const [idActual, setIdActual] = useState<string | undefined>(notaId);
-  const [descripcion, setDescripcion] = useState('');
+  const [descripcion, setDescripcion] = useState(descripcionInicial || '');
   const [items, setItems] = useState<ItemForm[]>([]);
   const [conProveedor, setConProveedor] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(!!notaId);
