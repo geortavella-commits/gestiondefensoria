@@ -5,7 +5,7 @@ Legajo digital del personal, sub-sedes, áreas, capacitaciones y notas de pedido
 
 - **Tipo:** institucional / municipal (no es multi-tenant de comercio: no usar la skill `supabase-comercio-multitenant`).
 - **Supabase:** proyecto `coordinaciondefensoria`, ref `ubzkzjdnajofjfsrhbhu` (us-west-2, Postgres 17).
-- **Repo:** https://github.com/darioanzaudo2017/ddnagestion2026 (rama `main`).
+- **Repo:** dos remotos sobre la misma rama `main` — `origin` → https://github.com/darioanzaudo2017/ddnagestion2026 (histórico) y `geortavella` → https://github.com/geortavella-commits/gestiondefensoria (repo de destino para el deploy en Vercel, agregado el 2026-10-19). Al pushear cambios, mandarlos a los dos (`git push origin main && git push geortavella main`) salvo que se decida discontinuar uno.
 - **Estado:** en desarrollo local, sin deploy todavía.
 - **Reparto de trabajo:** el frontend lo genera Gemini a partir de Stitch; Claude se ocupa de Supabase (esquema, RLS, Edge Functions) y de revisar lo que entrega Gemini.
 
