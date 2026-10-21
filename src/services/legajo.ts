@@ -151,9 +151,9 @@ export async function updatePerfilAgente(
     if (datos.area_id !== undefined) payload.area_id = datos.area_id;
     if (datos.sub_sede_id !== undefined) payload.sub_sede_id = datos.sub_sede_id;
     if (datos.estado !== undefined) payload.estado = datos.estado;
-    if (datos.legajo !== undefined) payload.legajo = datos.legajo;
+    if (datos.legajo !== undefined) payload.legajo = datos.legajo || null;
     if (datos.dni !== undefined) payload.dni = datos.dni;
-    if (datos.fecha_ingreso !== undefined) payload.fecha_ingreso = datos.fecha_ingreso;
+    if (datos.fecha_ingreso !== undefined) payload.fecha_ingreso = datos.fecha_ingreso || null;
   }
 
   const { data, error } = await supabase
