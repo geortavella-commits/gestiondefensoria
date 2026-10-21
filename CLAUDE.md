@@ -5,7 +5,7 @@ Legajo digital del personal, sub-sedes, áreas, capacitaciones y notas de pedido
 
 - **Tipo:** institucional / municipal (no es multi-tenant de comercio: no usar la skill `supabase-comercio-multitenant`).
 - **Supabase:** proyecto `coordinaciondefensoria`, ref `ubzkzjdnajofjfsrhbhu` (us-west-2, Postgres 17).
-- **Repo:** dos remotos sobre la misma rama `main` — `origin` → https://github.com/darioanzaudo2017/ddnagestion2026 (histórico) y `geortavella` → https://github.com/geortavella-commits/gestiondefensoria (repo de destino para el deploy en Vercel, agregado el 2026-10-19). Al pushear cambios, mandarlos a los dos (`git push origin main && git push geortavella main`) salvo que se decida discontinuar uno.
+- **Repo:** dos remotos sobre la misma rama `main` — `origin` → https://github.com/darioanzaudo2017/ddnagestion2026 (histórico) y `geortavella` → https://github.com/geortavella-commits/gestiondefensoria (repo de destino para el deploy en Vercel, agregado el 2026-10-19). Al pushear cambios, mandarlos a los dos (`git push origin main && git push geortavella main`) salvo que se decida discontinuar uno. **`geortavella-commits/gestiondefensoria` es público** (se pasó de privado a público el 2026-10-21 porque el plan Hobby de Vercel no deja deployar commits de alguien que no es el dueño del proyecto sobre un repo privado) — con el repo público, nunca va ni una key/token real en el código ni en el historial de commits, ni siquiera temporalmente (ver Reglas que no se rompen).
 - **Estado:** en desarrollo local, sin deploy todavía.
 - **Reparto de trabajo:** el frontend lo genera Gemini a partir de Stitch; Claude se ocupa de Supabase (esquema, RLS, Edge Functions) y de revisar lo que entrega Gemini.
 
