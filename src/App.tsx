@@ -156,7 +156,13 @@ export function App() {
   if (authView === 'login') {
     return (
       <LoginPage
-        onSuccess={() => setAuthView('app')}
+        // No forzar authView acá: el listener de onAuthStateChange en
+        // useAuthSession ya lo hace, pero recién después de que applySession
+        // termine de cargar listaPerfiles/rol/perfil seleccionado. Si este
+        // callback también lo setea, gana la carrera y la app se monta con
+        // ese estado todavía vacío (bug: "permission denied for function
+        // mi_subsede" al loguearse, se arreglaba solo con F5).
+        onSuccess={() => {}}
         onNavigateToRegister={() => setAuthView('register')}
         onBypassDemo={() => setAuthView('app')}
       />
@@ -167,7 +173,9 @@ export function App() {
   if (authView === 'register') {
     return (
       <RegisterPage
-        onSuccess={() => setAuthView('app')}
+        // Mismo motivo que en LoginPage: dejar que el listener central
+        // haga la transición recién cuando applySession terminó.
+        onSuccess={() => {}}
         onNavigateToLogin={() => setAuthView('login')}
       />
     );

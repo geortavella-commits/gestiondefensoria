@@ -53,9 +53,20 @@ export function useAuthSession() {
     })();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // Supabase dispara TOKEN_REFRESHED solo, sin login nuevo, cada vez que
+      // la pestaña recupera el foco (chequea/renueva el token). No es un
+      // evento de sesión nueva: si reaplicamos applySession acá, resetea
+      // selectedProfileId al legajo propio y se pierde el legajo que se
+      // estaba mirando/editando. Se ignora a propósito.
+      if (event === 'TOKEN_REFRESHED') return;
+
       if (session?.user) {
-        setAuthView('app');
+        // Esperar a que applySession termine de poblar listaPerfiles/
+        // selectedProfileId/currentUserRole ANTES de mostrar la app: si se
+        // invierte el orden, los componentes hijos montan y consultan
+        // Supabase con ese estado todavía vacío/default.
         await applySession(session.user.id);
+        setAuthView('app');
       } else if (event === 'SIGNED_OUT') {
         setAuthView('login');
       }
