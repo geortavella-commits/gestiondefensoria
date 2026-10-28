@@ -43,8 +43,16 @@ export function useAuthSession() {
       try {
         setLoading(true);
         const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) setAuthView('app');
-        await applySession(session?.user?.id ?? null);
+        // Si no hay sesión todavía (primera visita, pestaña nueva, después de
+        // un logout) no hay nada que cargar: queda en pantalla de login. Antes
+        // esto igual llamaba a applySession(null), que consulta `profiles`
+        // como anon y siempre falla (anon no tiene grant ahí) — el error
+        // quedaba pegado en este estado para siempre, incluso después de un
+        // login exitoso, porque nada lo volvía a limpiar.
+        if (session?.user) {
+          await applySession(session.user.id);
+          setAuthView('app');
+        }
       } catch (err: any) {
         if (active) setError(err.message || 'Error al inicializar la sesión');
       } finally {
@@ -66,6 +74,7 @@ export function useAuthSession() {
         // invierte el orden, los componentes hijos montan y consultan
         // Supabase con ese estado todavía vacío/default.
         await applySession(session.user.id);
+        setError(null);
         setAuthView('app');
       } else if (event === 'SIGNED_OUT') {
         setAuthView('login');
